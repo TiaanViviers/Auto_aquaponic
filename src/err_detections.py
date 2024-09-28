@@ -1,5 +1,6 @@
 from datetime import datetime
 from numpy import std, mean
+
 def is_const_err(window, last_changed, max_time):
     """
     Check if the sensor is experiencing a constant error, where the latest value

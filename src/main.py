@@ -61,7 +61,7 @@ def main():
         
     elif sys.argv[1] == "csv":
         cleaned_data = run_csv(sys.argv[2], last_changed, last_EMA)
-        datapoints_to_csv(cleaned_data, "clean", True)
+        datapoints_to_csv(cleaned_data, "Valid_clean", True)
         print("new cleaned data csv made")
         return
     
@@ -197,8 +197,8 @@ def run_csv(file_path, last_changed, last_EMA):
         if not no_err:
             print(f"Drift detected in CUSUM at time: {window.as_list()[-1].time_stamp}")
         
-        #target_time = window.as_list()[-1].time_stamp
-        #write_csv(target, target_time, "AES_method")
+        target_time = window.as_list()[-1].time_stamp
+        write_csv(target, target_time, "Valid_target")
         
 
         while len(data_points) > 0 and is_null(data_points[0]):
