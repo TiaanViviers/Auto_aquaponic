@@ -61,7 +61,7 @@ def main():
         
     elif sys.argv[1] == "csv":
         cleaned_data = run_csv(sys.argv[2], last_changed, last_EMA)
-        datapoints_to_csv(cleaned_data, "Valid_clean", True)
+        datapoints_to_csv(cleaned_data, "clean", True)
         print("new cleaned data csv made")
         return
     
