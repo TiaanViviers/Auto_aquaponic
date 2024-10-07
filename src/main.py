@@ -61,7 +61,7 @@ def main():
         
     elif sys.argv[1] == "csv":
         cleaned_data = run_csv(sys.argv[2], last_changed, last_EMA)
-        datapoints_to_csv(cleaned_data, "clean", True)
+        datapoints_to_csv(cleaned_data, "INT_clean", True)
         print("new cleaned data csv made")
         return
     
@@ -197,8 +197,8 @@ def run_csv(file_path, last_changed, last_EMA):
         if not no_err:
             print(f"Drift detected in CUSUM at time: {window.as_list()[-1].time_stamp}")
         
-        #target_time = window.as_list()[-1].time_stamp
-        #write_csv(target, target_time, "Valid_target")
+        target_time = window.as_list()[-1].time_stamp
+        write_csv(target, target_time, "INT_target")
         
 
         while len(data_points) > 0 and is_null(data_points[0]):
@@ -230,7 +230,7 @@ def get_UL(window):
     if sensor_type == "Bvoltage_sensor":
         UL = 50
         
-    if sensor_type == 'SSTEMP_sensor':
+    if sensor_type in ('SSTEMP_sensor', 'TEMP_sensor'):
         UL = 45
         
     if sensor_type == 'illuminance_sensor':
@@ -265,7 +265,7 @@ def get_LL(window):
     if sensor_type == "Bvoltage_sensor":
         LL = -0.00000001
         
-    if sensor_type == 'SSTEMP_sensor':
+    if sensor_type in ('SSTEMP_sensor', 'TEMP_sensor'):
         LL = -10
     
     if sensor_type == 'illuminance_sensor':
@@ -294,7 +294,7 @@ def get_max_time(window):
         timedelta: The maximum time allowed for readings from the sensor.
     """
     sensor_type = window.get_sensor_type()
-    max_time = 0
+    max_time = timedelta(minutes=30)
     
     if sensor_type == "Pvoltage_sensor":
         max_time = timedelta(minutes=30)
@@ -302,7 +302,7 @@ def get_max_time(window):
     if sensor_type == "Bvoltage_sensor":
         max_time = timedelta(minutes=30)
         
-    if sensor_type == 'SSTEMP_sensor':
+    if sensor_type in ('SSTEMP_sensor', 'TEMP_sensor'):
         max_time = timedelta(minutes=30)
     
     if sensor_type == 'illuminance_sensor':
