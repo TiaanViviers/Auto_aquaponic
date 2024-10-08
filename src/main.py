@@ -3,6 +3,7 @@ from sliding_window import SlidingWindow
 from data_point import DataPoint
 from preprocessor import range_check, med_filter, do_EMA, is_null
 from err_detections import is_const_err, CUSUM
+from format_time import time_formatter
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
@@ -60,8 +61,9 @@ def main():
         run_sensors(client, last_changed, last_EMA)
         
     elif sys.argv[1] == "csv":
+        time_formatter(sys.argv[2])
         cleaned_data = run_csv(sys.argv[2], last_changed, last_EMA)
-        datapoints_to_csv(cleaned_data, "INT_clean", True)
+        datapoints_to_csv(cleaned_data, "clean", True)
         print("new cleaned data csv made")
         return
     
@@ -197,8 +199,8 @@ def run_csv(file_path, last_changed, last_EMA):
         if not no_err:
             print(f"Drift detected in CUSUM at time: {window.as_list()[-1].time_stamp}")
         
-        target_time = window.as_list()[-1].time_stamp
-        write_csv(target, target_time, "INT_target")
+        #target_time = window.as_list()[-1].time_stamp
+        #write_csv(target, target_time, "target")
         
 
         while len(data_points) > 0 and is_null(data_points[0]):
