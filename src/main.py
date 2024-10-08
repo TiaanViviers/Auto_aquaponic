@@ -1,5 +1,6 @@
 from mqtt_client import MQTTClient
 from sliding_window import SlidingWindow
+from telebot import Telebot
 from data_point import DataPoint
 from preprocessor import range_check, med_filter, do_EMA, is_null
 from err_detections import is_const_err, CUSUM
@@ -58,20 +59,33 @@ def main():
         mqtt_client.connect()
         mqtt_client.start()
         client = mqtt_client
-        run_sensors(client, last_changed, last_EMA)
+        # Set up telegram Bot
+        BOT_TOKEN = os.getenv("BOT_TOKEN")
+        OPS_CHAT_ID = os.getenv("OPS_CHAT_ID")
+        TECH_CHAT_ID = os.getenv("TECH_CHAT_ID")
+        bot = Telebot(BOT_TOKEN, OPS_CHAT_ID, TECH_CHAT_ID)
+        run_sensors(client, last_changed, last_EMA, bot)
         
     elif sys.argv[1] == "csv":
+        #load environment variables
+        load_dotenv()
+        # Set up telegram Bot
+        BOT_TOKEN = os.getenv("BOT_TOKEN")
+        OPS_CHAT_ID = os.getenv("OPS_CHAT_ID")
+        TECH_CHAT_ID = os.getenv("TECH_CHAT_ID")
+        bot = Telebot(BOT_TOKEN, OPS_CHAT_ID, TECH_CHAT_ID)
+        #format inputfile
         time_formatter(sys.argv[2])
-        cleaned_data = run_csv(sys.argv[2], last_changed, last_EMA)
+        #run inputfile
+        cleaned_data = run_csv(sys.argv[2], last_changed, last_EMA, bot)
         datapoints_to_csv(cleaned_data, "clean", True)
         print("new cleaned data csv made")
-        return
     
     
 
 ################################ DYNAMIC SENSOR READINGS ################################
 
-def run_sensors(client, last_changed, last_EMA):
+def run_sensors(client, last_changed, last_EMA, bot):
     window = SlidingWindow(10)
     CT_plus_win = SlidingWindow(10)
     CT_min_win = SlidingWindow(10)
@@ -116,6 +130,7 @@ def run_sensors(client, last_changed, last_EMA):
             
                 #check for constant error sensor fault
                 if is_const_err(window, last_changed, get_max_time(window)):
+                    err_log(bot, 1, window.as_list[-1])
                     print("CONSTANT ERROR DETECTED")
 
                 #perform range check on current window
@@ -147,7 +162,7 @@ def run_sensors(client, last_changed, last_EMA):
 
 ################################ STATIC CSV READINGS ################################
 
-def run_csv(file_path, last_changed, last_EMA):
+def run_csv(file_path, last_changed, last_EMA, bot):
     """
     Clean data from a CSV file by processing sensor readings and applying filters.
 
@@ -179,7 +194,8 @@ def run_csv(file_path, last_changed, last_EMA):
 
         #check for constant error sensor fault
         if is_const_err(window, last_changed, get_max_time(window)):
-            print("CONSTANT ERROR DETECTED")
+            err_log(bot, 1, window.as_list[-1])
+            print("CONSTANT VALUE ERR DETECTED")
 
         #perform range check on current window
         if first_window:
@@ -195,8 +211,9 @@ def run_csv(file_path, last_changed, last_EMA):
         last_EMA = do_EMA(window, last_EMA, 0.4)
         
         #error detection with CUSUM
-        no_err, target = CUSUM(CT_plus_win, CT_min_win, window.get_win_vals(), target)
+        no_err, target, cl = CUSUM(CT_plus_win, CT_min_win, window.get_win_vals(), target)
         if not no_err:
+            err_log(bot, 2, window.as_list[-1], cl=cl)
             print(f"Drift detected in CUSUM at time: {window.as_list()[-1].time_stamp}")
         
         #target_time = window.as_list()[-1].time_stamp
@@ -211,6 +228,22 @@ def run_csv(file_path, last_changed, last_EMA):
     
     cleaned_data += window.as_list()
     return cleaned_data
+
+
+############################# TELEGRAM COMMUNICATION #############################
+def err_log(bot, type, datapoint, cl=None, pred_time=None):
+    val = datapoint.value
+    time = datapoint.time_stamp
+    sensor = datapoint.sensor_type
+    unit = datapoint.unit
+    if pred_time:
+        up, low = get_ML_range(sensor)
+    else:
+        pred_time = None; up = None; low = None
+    
+    bot.log(type, val, time, sensor, unit, cl, pred_time=pred_time, range_up=up, range_low=low)
+    
+
 
 
 ################################ UTILITY FUNCTIONS ################################
@@ -321,6 +354,30 @@ def get_max_time(window):
     
     return max_time
 
+
+def get_ML_range(sensor_type):
+    if sensor_type == "Pvoltage_sensor":
+        low = -0.000001; high = 50
+    
+    if sensor_type == "Bvoltage_sensor":
+        low = -0.000001; high = 50
+        
+    if sensor_type in ('SSTEMP_sensor', 'TEMP_sensor'):
+        low = 8; high = 30
+    
+    if sensor_type == 'illuminance_sensor':
+        low = -0.000001; high = 100_000
+        
+    if sensor_type == 'SSHUM_sensor':
+        low = 15; high = 80
+    
+    if sensor_type == 'PH_sensor':
+        low = -15; high = 50
+        
+    if sensor_type == 'WINDDIR_sensor':
+        low = -0.000001; high = 361
+    
+    return high, low
 
 ################################ READING / WRITING ################################
 

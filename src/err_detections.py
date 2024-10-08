@@ -100,9 +100,9 @@ def CUSUM(dev_plus_win, dev_minus_win, window_vals, last_smoothed):
 
     # Check control limits
     if CT_plus_sum > control_lim or CT_minus_sum > control_lim:
-        return False , target # Process is out of control
+        return False, target, control_lim # Process is out of control
     else:
-        return True , target # Process is in control
+        return True, target, control_lim # Process is in control
 
 
 
