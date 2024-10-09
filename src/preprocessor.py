@@ -38,6 +38,24 @@ def is_null(datapoint):
     
     
 def do_EMA(window, last_EMA, alpha):
+    """
+    Computes and updates the Exponential Moving Average (EMA) for a given window of values.
+    
+    Args:
+        window (SlidingWindow): The sliding window object containing the recent sensor values.
+        last_EMA (float): The last computed EMA value.
+        alpha (float): The smoothing factor (between 0 and 1) for the EMA calculation.
+        
+    Returns:
+        float: The updated EMA value based on the latest value in the window.
+    
+    Functionality:
+        - Retrieves the latest value from the sliding window.
+        - Computes the new EMA value using the formula:
+            new_EMA = alpha * latest_val + (1 - alpha) * last_EMA
+        - Updates the last value in the window to the new EMA value.
+        - Returns the updated EMA for future use.
+    """
     window_vals = window.get_win_vals()
     latest_val = window_vals[-1]
     

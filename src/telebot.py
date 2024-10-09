@@ -1,18 +1,60 @@
 import requests
 
 class Telebot:
+    """
+    A class to interact with Telegram Bot API to send messages for logging sensor errors.
+
+    Attributes:
+        token (str): The token used to authenticate with the Telegram Bot API.
+        ops_chat_id (str): The chat ID for operations-related alerts.
+        tech_chat_id (str): The chat ID for technical-related alerts.
+    """
+    
     def __init__(self, token, ops_chat_id, tech_chat_id):
+        """
+        Initializes the Telebot class with authentication token and chat IDs.
+        
+        Args:
+            token (str): The token for the Telegram Bot API.
+            ops_chat_id (str): The chat ID for operational alerts.
+            tech_chat_id (str): The chat ID for technical alerts.
+        """
         self.token = token
         self.ops_chat_id = ops_chat_id
         self.tech_chat_id = tech_chat_id
 
     def log(self, error_type, value, time, sensor, unit, cl=None, pred_time=None,
                   range_up=None, range_low=None):
+        """
+        Logs error messages based on sensor readings and sends them via Telegram.
+        
+        Args:
+            error_type (int): The type of error (1 for constant error, 2 for CUSUM drift,
+                              3 for prediction error).
+            value (float): The sensor value that triggered the error.
+            time (str): The timestamp when the error occurred.
+            sensor (str): The type of sensor reporting the error.
+            unit (str): The unit of measurement for the sensor value.
+            cl (float, optional): Control limit, if applicable. Defaults to None.
+            pred_time (str, optional): The predicted timestamp for prediction errors.
+            range_up (float, optional): The upper limit of the predicted range for
+                                        the sensor.
+            range_low (float, optional): The lower limit of the predicted range for
+                                        the sensor.
+        
+        Functionality:
+            - Based on the `error_type`, formats a message specific to the type of error:
+              1. Constant Value Error.
+              2. CUSUM Drift Error.
+              3. Prediction Error.
+            - Sends the message to the appropriate chat channel 
+              ('ops' for operational alerts, 'tech' for technical alerts).
+        """
         message = None
 
         if error_type == 1:
             # Stuck at zero
-            if value in (0, 0.0, 0.00, 0.000):
+            if value == 0.00:
                 message = (f"Detected 'Stuck at Zero' error for sensor {sensor} at"
                            f" time {time}.")
             else:
@@ -23,9 +65,9 @@ class Telebot:
 
         elif error_type == 2:
             # Cusum error
-            message = (f"Sensor {sensor} has drifted or the precision has degraded. "
-                       f"It is above the Control Limit ({cl}{unit}) with value "
-                       f"{value}{unit} at time {time}.")
+            message = (f"Sensor {sensor} has drifted past the control limit or the "
+                       f"precision has degraded. It is above the Control Limit ({cl}{unit}) "
+                       f"with value {value}{unit} at time {time}.")
             self.send_message(message, 'tech')
 
         elif error_type == 3:
@@ -39,6 +81,19 @@ class Telebot:
         
 
     def send_message(self, message, channel):
+        """
+        Sends a message to the specified Telegram channel (ops or tech).
+        
+        Args:
+            message (str): The message to be sent to Telegram.
+            channel (str): The channel to which the message should be sent 
+            ('ops' for operational, 'tech' for technical).
+        
+        Functionality:
+            - Sends the message to either the operational or technical chat ID
+              based on the channel parameter.
+            - Uses the Telegram Bot API to send the message.
+        """
         if channel == 'ops':
             chat_id = self.ops_chat_id
         else:

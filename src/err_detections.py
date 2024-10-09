@@ -135,25 +135,27 @@ def get_control_lim(sensor_readings, k=5):
     return k * std(sensor_readings)
 
 def get_target(window_vals, last_smoothed):
-    #return mean(window_vals)
     return AES_target(window_vals, last_smoothed)
     
     
-def mean_target(window_vals, last_smoothed=0):
-    """
-    Calculate the target value as the mean of the window values.
-
-    Args:
-        window_vals (list): A list of sensor readings.
-
-    Returns:
-        float: The target value.
-    """
-    return mean(window_vals)
-    
-    
-
 def AES_target(window_vals, last_smoothed):
+    """
+    Calculates the Adaptive Exponential Smoothing (AES) target based on the current 
+    window of values and the last smoothed value.
+    
+    Args:
+        window_vals (list of float): A list of the most recent sensor readings.
+        last_smoothed (float): The last smoothed value using the AES method.
+    
+    Returns:
+        float: The next smoothed target value, calculated as an exponential moving average.
+    
+    Functionality:
+        - The function first calculates the smoothing factor `alpha` using `get_alpha()`, 
+          which adapts based on the standard deviation of the values in the window.
+        - The last value in the window (`xt`) is combined with the previous smoothed value 
+          using `alpha` to generate the next smoothed value (`target`).
+    """
     alpha = get_alpha(window_vals)
     xt = window_vals[-1]
     target = alpha * xt + (1-alpha)*last_smoothed
@@ -161,6 +163,27 @@ def AES_target(window_vals, last_smoothed):
     
     
 def get_alpha(window_vals):
+    """
+    Calculates the smoothing factor `alpha` based on the variability 
+    of the window of values.
+    
+    Args:
+        window_vals (list of float): A list of the most recent sensor readings (window of values).
+    
+    Returns:
+        float: The smoothing factor `alpha`, constrained between 0 and 1, 
+               which reflects the variability in the window.
+    
+    Functionality:
+        - The function calculates the normalized standard deviation (`std_norm`)
+          of the window values.
+        - It computes the maximum possible standard deviation (`std_max`) as 
+          half the range of the values.
+        - The smoothing factor `alpha` is the ratio of `std_norm` to `std_max`. 
+          If there is no variability (`std_max == 0`), `alpha` is set to 0.
+        - Ensures that `alpha` is bounded between 0 and 1, meaning no smoothing 
+          (alpha = 1) or full smoothing (alpha = 0).
+    """
     std_norm = std(window_vals)
     x_min = min(window_vals)
     x_max = max(window_vals)

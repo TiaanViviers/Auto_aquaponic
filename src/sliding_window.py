@@ -18,9 +18,8 @@ class SlidingWindow:
             size (int): The desired size of the sliding window.
         """
         self.size = size
-        self.max_size = 40                             # Max size of window queue
-        self.window = deque(maxlen=self.max_size)      # create a queue object
-
+        self.max_size = 40
+        self.window = deque(maxlen=self.max_size)
 
     def add_reading(self, reading):
         """
