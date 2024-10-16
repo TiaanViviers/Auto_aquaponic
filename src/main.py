@@ -32,21 +32,19 @@ def main():
     """
     last_changed = [0, 0]  #value, timestamp
     last_EMA = 0
-    
-    if (len(sys.argv) not in (2, 3)) or (sys.argv[1] not in ("params", "mqtt", "csv")):
-        print("Invalid program arguments")
-        print("Run <python/python3 main.py params> to see parameter options")
-        return
         
     
-    if sys.argv[1] == "params":
-        print("For Dynamic sensor readings:")
-        print("     argv 1 = mqtt")
-        print("         argv 2 = pvolt | bvolt | temp | illum | ph | humid")
-        print()
-        print("For Static data from csv file:")
-        print("     argv 1 = csv")
-        print("         argv 2 = csv file path eg ../Data/<csv_filename.csv>")
+    if len(sys.argv) < 2 or sys.argv[1] == "params":
+        _ = """
+        For Dynamic sensor readings:
+            argv 1 = mqtt
+                argv 2 = pvolt | bvolt | temp | illum | ph | humid
+
+        For Static data from CSV file:
+            argv 1 = csv
+                argv 2 = CSV file path, e.g., ../data/<csv_filename.csv>
+        """
+        print(_)
         return
     
     elif sys.argv[1] == "mqtt":
@@ -83,6 +81,14 @@ def main():
         cleaned_data = run_csv(sys.argv[2], last_changed, last_EMA, bot)
         datapoints_to_csv(cleaned_data, "clean", True)
         print("new cleaned data csv made")
+
+    else:
+        _ = """
+        Invalid program arguments!
+        Run <python/python3 main.py params> to see parameter options
+        """
+        print(_)
+        return
     
 
 ################################ DYNAMIC SENSOR READINGS ################################
@@ -253,13 +259,11 @@ def run_csv(file_path, last_changed, last_EMA, bot):
         last_EMA = do_EMA(window, last_EMA, 0.4)
         
         #error detection with CUSUM
-        no_err, target, cl = CUSUM(CT_plus_win, CT_min_win, window.get_win_vals(), target)
+        no_err, cl = CUSUM(CT_plus_win, CT_min_win, window, target)
         if not no_err:
             err_log(bot, 2, window.as_list()[-1], cl=cl)
             print(f"Drift detected in CUSUM at time: {window.as_list()[-1].time_stamp}")
-        
-        #target_time = window.as_list()[-1].time_stamp
-        #write_csv(target, target_time, "target")
+    
         
         #Prediction error check
         if is_dangerous_prediction(model, window, bot):
@@ -616,34 +620,6 @@ def datapoints_to_csv(data_points, file_type, write_all):
             # Write the row to the CSV file
             csv_writer.writerow(row)
 
-
-def write_csv(value, timestamp, output_path):
-    """
-    Writes a value and timestamp to a CSV file. If the file already exists, it
-    appends the new data; otherwise, it creates a new file with the header.
- 
-    Args:
-        value (float): The target value to be written to the CSV file.
-        timestamp (str or pd.Timestamp): The timestamp associated with the value.
-        output_path (str): The name of the CSV file (without the ".csv" extension)
-                           where the data will be stored.The file will be created
-                           or appended in the "../data/" directory.
-    
-    Raises:
-        None: The function does not raise any errors but will fail silently if the directory "../data/" does not exist.
-    """
-    output_path = "../data/" + output_path + ".csv"
-    # Create a DataFrame with the given value and timestamp
-    data = {'Target': [value], 'Time': [timestamp]}
-    df = pd.DataFrame(data)
-
-    # Check if the file already exists
-    if not os.path.exists(output_path):
-        # File doesn't exist, write with header
-        df.to_csv(output_path, mode='w', header=True, index=False)
-    else:
-        # File exists, append without writing the header
-        df.to_csv(output_path, mode='a', header=False, index=False)
             
             
 if __name__ == '__main__' :
