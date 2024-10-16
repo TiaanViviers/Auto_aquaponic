@@ -65,7 +65,7 @@ class Telebot:
 
         elif error_type == 2:
             # Cusum error
-            message = (f"Sensor {sensor} has drifted past the control limit or the "
+            message = (f"Sensor {sensor} has deviated above the control limit or the "
                        f"precision has degraded. It is above the Control Limit ({cl}{unit}) "
                        f"with value {value}{unit} at time {time}.")
             self.send_message(message, 'tech')

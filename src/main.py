@@ -226,7 +226,7 @@ def run_csv(file_path, last_changed, last_EMA, bot):
             data_points.pop(0)
         first_window = True
         
-    model = Model(get_model_type(window.get_sensor_type()))
+    model = Model(window.get_sensor_type())
     
     while data_points:
         if first_window:
@@ -277,6 +277,7 @@ def run_csv(file_path, last_changed, last_EMA, bot):
 
 
 ############################## TELEGRAM COMMUNICATION #############################
+
 def err_log(bot, type, datapoint, cl=None, pred_time=None):
     """
     Logs errors and alerts using a bot, optionally including prediction and control

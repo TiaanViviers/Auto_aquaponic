@@ -25,12 +25,12 @@ class Model:
         Raises:
             ValueError: If the sensor type is not supported.
         """
-        self.sensor_type = sensor_type
+        self.sensor_type = self.get_model_type(sensor_type)
         self.model = None
         self.scaler = MinMaxScaler()
 
         # Load the appropriate model based on the sensor type
-        if sensor_type == 'temp':
+        if self.sensor_type == 'temp':
             self.model = load_model('../models/temp_model.keras')
         else:
             raise ValueError(f"Model for sensor type '{sensor_type}' is not available yet.")
@@ -103,6 +103,42 @@ class Model:
             return predictions, future_timestamps
         else:
             raise ValueError(f"sensor type '{self.sensor_type}' is not implemented yet.")
+        
+
+    def get_model_type(self, sensor_type):
+        """
+        Maps sensor types to their corresponding model types.
+
+        Args:
+            sensor_type (str): The type of the sensor (e.g., 'SSTEMP_sensor')
+
+        Returns:
+            str: The model type associated with the given sensor type. Possible return values:
+                - 'pvolt' for 'Pvoltage_sensor'.
+                - 'bvolt' for 'Bvoltage_sensor'.
+                - 'temp' for temperature sensors ('SSTEMP_sensor' and 'TEMP_sensor').
+                - 'illum' for 'illuminance_sensor'.
+                - 'hum' for 'SSHUM_sensor'.
+                - 'ph' for 'PH_sensor'.
+                - None for 'WINDDIR_sensor' (currently not handled).
+
+        Raises:
+            None: Function will return `None` if an unsupported sensor type is passed.
+        """
+        if sensor_type == "Pvoltage_sensor":
+            return 'pvolt'
+        if sensor_type == "Bvoltage_sensor":
+            return 'bvolt'
+        if sensor_type in ('SSTEMP_sensor', 'TEMP_sensor'):
+            return 'temp'
+        if sensor_type == 'illuminance_sensor':
+            return 'illum'
+        if sensor_type == 'SSHUM_sensor':
+            return 'hum'
+        if sensor_type == 'PH_sensor':
+            return 'ph'
+        if sensor_type == 'WINDDIR_sensor':
+            pass
 
 
 def test_client():
