@@ -492,7 +492,7 @@ def get_max_time(window):
         max_time = timedelta(minutes=30)
         
     if sensor_type in ('SSTEMP_sensor', 'TEMP_sensor'):
-        max_time = timedelta(minutes=30)
+        max_time = timedelta(minutes=5)
     
     if sensor_type == 'illuminance_sensor':
         max_time = timedelta(minutes=30)
@@ -528,7 +528,7 @@ def get_ML_range(sensor_type):
         low = -0.000001; high = 50
         
     if sensor_type in ('SSTEMP_sensor', 'TEMP_sensor'):
-        low = 8; high = 30
+        low = -2; high = 30
     
     if sensor_type == 'illuminance_sensor':
         low = -0.000001; high = 100_000
